@@ -11,7 +11,7 @@ import committee.nova.cyclones.implicits.Implicits.WorldImplicit
 import net.minecraft.entity.EntityLiving
 import net.minecraft.network.play.server.SPacketSoundEffect
 import net.minecraft.util.SoundCategory
-import net.minecraft.util.text.TextComponentTranslation
+import net.minecraft.util.text.{Style, TextComponentTranslation, TextFormatting}
 import net.minecraftforge.common.MinecraftForge
 import net.minecraftforge.event.entity.living.LivingSetAttackTargetEvent
 import net.minecraftforge.event.entity.player.PlayerEvent.Visibility
@@ -71,7 +71,6 @@ object ForgeEventHandler {
       val msg = new CycloneStatusSyncMessage
       val dim = world.provider.getDimension
       msg.setDim(dim)
-      println(s"c: ${cyclone.getCountDown} t: ${cyclone.getTick} f: ${cyclone.getFinalTick}")
       msg.setCount(cyclone.getCountDown)
       msg.setTick(cyclone.getTick)
       msg.setFinalTick(cyclone.getFinalTick)
@@ -97,18 +96,21 @@ object ForgeEventHandler {
     val world = e.getWorld
     world.getEntities[EntityLiving](classOf[EntityLiving], always).asScala.foreach(l => l.setAttackTarget(null))
     world.getMinecraftServer.getPlayerList.getPlayers.asScala.foreach(p => {
-      p.sendStatusMessage(new TextComponentTranslation("msg.cyclones.start"), true)
+      p.sendStatusMessage(new TextComponentTranslation("msg.cyclones.start")
+        .setStyle(new Style().setColor(TextFormatting.RED)), true)
       p.connection.sendPacket(new SPacketSoundEffect(SoundInit.cycloneStart, SoundCategory.WEATHER, p.posX, p.posY, p.posZ, 1.0F, 1.0F))
     })
   }
 
   @SubscribeEvent
   def onCycloneNotify(e: CycloneEvent.Notify): Unit = {
-    e.getWorld.getMinecraftServer.getPlayerList.getPlayers.asScala.foreach(p => p.sendStatusMessage(new TextComponentTranslation("msg.cyclones.notify", e.getCount.toString), true))
+    e.getWorld.getMinecraftServer.getPlayerList.getPlayers.asScala.foreach(p => p.sendStatusMessage(new TextComponentTranslation("msg.cyclones.notify",
+      e.getCount.toString).setStyle(new Style().setColor(TextFormatting.YELLOW)), true))
   }
 
   @SubscribeEvent
   def onCycloneStop(e: CycloneEvent.Stop): Unit = {
-    e.getWorld.getMinecraftServer.getPlayerList.getPlayers.asScala.foreach(p => p.sendStatusMessage(new TextComponentTranslation("msg.cyclones.stop"), true))
+    e.getWorld.getMinecraftServer.getPlayerList.getPlayers.asScala.foreach(p => p.sendStatusMessage(new TextComponentTranslation("msg.cyclones.stop")
+      .setStyle(new Style().setColor(TextFormatting.GREEN)), true))
   }
 }
