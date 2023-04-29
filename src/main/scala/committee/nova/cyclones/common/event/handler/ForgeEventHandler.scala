@@ -1,5 +1,6 @@
 package committee.nova.cyclones.common.event.handler
 
+import com.google.common.base.Predicate
 import committee.nova.cyclones.Cyclones
 import committee.nova.cyclones.common.event.impl.CycloneEvent
 import committee.nova.cyclones.common.event.impl.CycloneEvent.{Start$Post, Start$Pre}
@@ -22,6 +23,10 @@ import scala.collection.JavaConverters.collectionAsScalaIterableConverter
 
 @EventBusSubscriber
 object ForgeEventHandler {
+  final val always: Predicate[_ >: EntityLiving] = new Predicate[EntityLiving] {
+    override def apply(input: EntityLiving): Boolean = true
+  }
+
   @SubscribeEvent
   def onVisibility(e: Visibility): Unit = if (e.getEntityPlayer.world.getCyclone.isActive) e.modifyVisibility(0.8)
 
@@ -29,7 +34,7 @@ object ForgeEventHandler {
   def onSetTarget(e: LivingSetAttackTargetEvent): Unit = {
     e.getEntityLiving match {
       case l: EntityLiving =>
-        if (Cyclones.isInfluencedByCyclone(l, e.getTarget)) l.setAttackTarget(null)
+        if (Cyclones.isInfluencedByCycloneLogically(l, e.getTarget)) l.setAttackTarget(null)
       case _ =>
     }
   }
@@ -52,7 +57,7 @@ object ForgeEventHandler {
           if (pre.willNotify) MinecraftForge.EVENT_BUS.post(new CycloneEvent.Notify(world, cyclone.getCountDown))
           return
         }
-        cyclone.setTick(pre.getDuration)
+        cyclone.setFinalTick(pre.getDuration)
         MinecraftForge.EVENT_BUS.post(new Start$Post(world))
         return
       }
@@ -69,13 +74,16 @@ object ForgeEventHandler {
       msg.setDim(dim)
       msg.setCount(cyclone.getCountDown)
       msg.setTick(cyclone.getTick)
+      msg.setFinalTick(cyclone.getFinalTick)
       NetworkHandler.instance.sendToDimension(msg, dim)
     }
   }
 
   @SubscribeEvent
   def onCycloneStart(e: CycloneEvent.Start$Post): Unit = {
-    e.getWorld.getMinecraftServer.getPlayerList.getPlayers.asScala.foreach(p => {
+    val world = e.getWorld
+    world.getEntities[EntityLiving](classOf[EntityLiving], always).asScala.foreach(l => l.setAttackTarget(null))
+    world.getMinecraftServer.getPlayerList.getPlayers.asScala.foreach(p => {
       p.sendStatusMessage(new TextComponentTranslation("msg.cyclones.start"), true)
       p.connection.sendPacket(new SPacketSoundEffect(SoundInit.cycloneStart, SoundCategory.WEATHER, p.posX, p.posY, p.posZ, 1.0F, 1.0F))
     })

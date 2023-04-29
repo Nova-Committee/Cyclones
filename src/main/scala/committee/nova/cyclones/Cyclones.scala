@@ -11,15 +11,24 @@ import net.minecraftforge.fml.common.event.FMLPreInitializationEvent
 @Mod(modid = MODID, useMetadata = true, modLanguage = "scala")
 object Cyclones {
   final val MODID = "cyclones"
-  final val cycloneVisibilitySq = 100.0
+  final val cycloneInfluenceVisualSq = 100.0
+  final val cycloneInfluenceLogicSq = 39.0
 
   @EventHandler def preInit(e: FMLPreInitializationEvent): Unit = NetworkHandler.init(e)
 
-  def isInfluencedByCyclone(e1: Entity, e2: Entity): Boolean = {
+  def isInfluencedByCycloneVisually(e1: Entity, e2: Entity): Boolean = {
     if (e1 == null || e2 == null || e1 == e2) return false
     val world = e1.world
     if (world != e2.world) return false
-    world.getCyclone.isActive && e1.getDistanceSq(e2) > cycloneVisibilitySq
+    val cyclone = world.getCyclone
+    cyclone.isActive && e1.getDistanceSq(e2) > cycloneInfluenceVisualSq / (.01 + cyclone.getTransition)
+  }
+
+  def isInfluencedByCycloneLogically(e1: Entity, e2: Entity): Boolean = {
+    if (e1 == null || e2 == null || e1 == e2) return false
+    val world = e1.world
+    if (world != e2.world) return false
+    world.getCyclone.isActive && e1.getDistanceSq(e2) > cycloneInfluenceLogicSq
   }
 
   // TODO: Dimension Blacklist 

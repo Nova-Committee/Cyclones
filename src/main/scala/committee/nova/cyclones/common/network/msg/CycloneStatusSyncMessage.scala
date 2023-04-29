@@ -13,8 +13,9 @@ object CycloneStatusSyncMessage {
       val world = Minecraft.getMinecraft.world
       if (world.provider.getDimension != message.dim) return null
       val cyclone = world.getCyclone
-      cyclone.setTick(message.tick)
       cyclone.setCountDown(message.count)
+      cyclone.setTick(message.tick)
+      cyclone.setFinalTick(message.finalTick)
       null
     }
   }
@@ -24,6 +25,7 @@ class CycloneStatusSyncMessage extends IMessage {
   private var dim = 0
   private var count = 0
   private var tick = 0
+  private var finalTick = 0
 
   def setDim(dim: Int): Unit = this.dim = dim
 
@@ -31,15 +33,19 @@ class CycloneStatusSyncMessage extends IMessage {
 
   def setTick(tick: Int): Unit = this.tick = tick
 
+  def setFinalTick(finalTick: Int): Unit = this.finalTick = finalTick
+
   override def fromBytes(buf: ByteBuf): Unit = {
     dim = buf.readInt()
     count = buf.readInt()
     tick = buf.readInt()
+    finalTick = buf.readInt()
   }
 
   override def toBytes(buf: ByteBuf): Unit = {
     buf.writeInt(dim)
     buf.writeInt(count)
     buf.writeInt(tick)
+    buf.writeInt(finalTick)
   }
 }
