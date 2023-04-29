@@ -1,0 +1,8 @@
+{
+  "cyclone_start": {
+    "subtitle": "subtitle.cyclones.cyclone_start",
+    "sounds": [
+      "cyclones:cyclone_start"
+    ]
+  }
+}

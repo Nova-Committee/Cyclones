@@ -1,0 +1,4 @@
+msg.cyclones.notify=A cyclone is approaching... Estimated Arrival Time: %s tick(s) later
+msg.cyclones.start=You are in a cyclone now!
+msg.cyclones.stop=The cyclone is leaving...
+subtitle.cyclones.cyclone_start=Cyclone starts
