@@ -11,7 +11,8 @@ object CycloneStatusSyncMessage {
     override def onMessage(message: CycloneStatusSyncMessage, ctx: MessageContext): IMessage = {
       if (ctx.side != Side.CLIENT) return null
       val world = Minecraft.getMinecraft.world
-      if (world.provider.getDimension != message.dim) return null
+      if (world == null) return null
+      if (message.dim != world.provider.getDimension) return null
       val cyclone = world.getCyclone
       cyclone.setCountDown(message.count)
       cyclone.setTick(message.tick)

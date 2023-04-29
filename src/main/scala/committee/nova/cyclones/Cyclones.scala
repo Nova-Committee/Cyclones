@@ -1,6 +1,7 @@
 package committee.nova.cyclones
 
 import committee.nova.cyclones.Cyclones.MODID
+import committee.nova.cyclones.common.config.CommonConfig
 import committee.nova.cyclones.common.network.handler.NetworkHandler
 import committee.nova.cyclones.implicits.Implicits.WorldImplicit
 import net.minecraft.entity.Entity
@@ -14,11 +15,15 @@ object Cyclones {
   final val cycloneInfluenceVisualSq = 100.0
   final val cycloneInfluenceLogicSq = 39.0
 
-  @EventHandler def preInit(e: FMLPreInitializationEvent): Unit = NetworkHandler.init(e)
+  @EventHandler def preInit(e: FMLPreInitializationEvent): Unit = {
+    CommonConfig.init(e)
+    NetworkHandler.init(e)
+  }
 
   def isInfluencedByCycloneVisually(e1: Entity, e2: Entity): Boolean = {
     if (e1 == null || e2 == null || e1 == e2) return false
     val world = e1.world
+    if (world.wontGenCyclone) return false
     if (world != e2.world) return false
     val cyclone = world.getCyclone
     cyclone.isActive && e1.getDistanceSq(e2) > cycloneInfluenceVisualSq / (.01 + cyclone.getTransition)
@@ -27,6 +32,7 @@ object Cyclones {
   def isInfluencedByCycloneLogically(e1: Entity, e2: Entity): Boolean = {
     if (e1 == null || e2 == null || e1 == e2) return false
     val world = e1.world
+    if (world.wontGenCyclone) return false
     if (world != e2.world) return false
     world.getCyclone.isActive && e1.getDistanceSq(e2) > cycloneInfluenceLogicSq
   }

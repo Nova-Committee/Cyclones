@@ -18,6 +18,7 @@ import net.minecraftforge.event.entity.player.PlayerEvent.Visibility
 import net.minecraftforge.fml.common.Mod.EventBusSubscriber
 import net.minecraftforge.fml.common.eventhandler.SubscribeEvent
 import net.minecraftforge.fml.common.gameevent.TickEvent.{Phase, WorldTickEvent}
+import net.minecraftforge.fml.relauncher.Side
 
 import scala.collection.JavaConverters.collectionAsScalaIterableConverter
 
@@ -40,13 +41,17 @@ object ForgeEventHandler {
   }
 
   @SubscribeEvent
-  def onTick(e: WorldTickEvent): Unit = {
+  def onCycloneTick(e: WorldTickEvent): Unit = {
+    if (e.side != Side.SERVER) return
     val world = e.world
+    if (world.wontGenCyclone) return
     val cyclone = world.getCyclone
     if (e.phase == Phase.START) {
       val couldCause = world.isRaining && world.isThundering
       if (!couldCause) {
-        if (cyclone.isActive) cyclone.stop(world)
+        if (!cyclone.isActive) return
+        if (!cyclone.isLeaving) cyclone.leave(world)
+        else if (cyclone.tick) MinecraftForge.EVENT_BUS.post(new CycloneEvent.Stop(world))
         return
       }
       if (cyclone.isOnCountDown) {
@@ -61,22 +66,30 @@ object ForgeEventHandler {
         MinecraftForge.EVENT_BUS.post(new Start$Post(world))
         return
       }
-      if (cyclone.isActive) {
-        if (cyclone.tick) MinecraftForge.EVENT_BUS.post(new CycloneEvent.Stop(world))
-        return
-      }
-      if (world.rand.nextBoolean() || world.rand.nextBoolean()) return
-      cyclone.setCountDown(200)
-      MinecraftForge.EVENT_BUS.post(new CycloneEvent.Notify(world, cyclone.getCountDown))
+      if (cyclone.isActive && cyclone.tick) MinecraftForge.EVENT_BUS.post(new CycloneEvent.Stop(world))
     } else {
       val msg = new CycloneStatusSyncMessage
       val dim = world.provider.getDimension
       msg.setDim(dim)
+      println(s"c: ${cyclone.getCountDown} t: ${cyclone.getTick} f: ${cyclone.getFinalTick}")
       msg.setCount(cyclone.getCountDown)
       msg.setTick(cyclone.getTick)
       msg.setFinalTick(cyclone.getFinalTick)
       NetworkHandler.instance.sendToDimension(msg, dim)
     }
+  }
+
+  @SubscribeEvent
+  def onCycloneGen(e: WorldTickEvent): Unit = {
+    if (e.side != Side.SERVER) return
+    if (e.phase != Phase.END) return
+    val world = e.world
+    val cyclone = world.getCyclone
+    if (!world.isRaining || !world.isThundering || cyclone.isOnCountDown || cyclone.isActive) return
+    if (world.rand.nextBoolean() || world.rand.nextBoolean()) return
+    val cd = 200
+    MinecraftForge.EVENT_BUS.post(new CycloneEvent.Notify(world, cd))
+    cyclone.setCountDown(cd)
   }
 
   @SubscribeEvent

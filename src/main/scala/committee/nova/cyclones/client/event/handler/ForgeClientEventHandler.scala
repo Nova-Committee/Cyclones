@@ -29,7 +29,6 @@ object ForgeClientEventHandler {
       e.setDensity(.001F)
       return
     }
-    val remain = cyclone.getFinalTick - cyclone.getTick
     e.setDensity(.001F + cyclone.getTransition * .36F)
   }
 }

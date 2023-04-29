@@ -1,11 +1,9 @@
 package committee.nova.cyclones.common.storage
 
 import committee.nova.cyclones.Cyclones
-import committee.nova.cyclones.common.event.impl.CycloneEvent
 import net.minecraft.nbt.NBTTagCompound
 import net.minecraft.world.World
 import net.minecraft.world.storage.WorldSavedData
-import net.minecraftforge.common.MinecraftForge
 
 object CyclonesSavedData {
   def get(world: World): CyclonesSavedData = {
@@ -18,7 +16,7 @@ object CyclonesSavedData {
 }
 
 class CyclonesSavedData(name: String) extends WorldSavedData(name) {
-  private var cycloneCountDown = 200
+  private var cycloneCountDown = 0
   private var cycloneTick = 0
   private var cycloneFinalTick = 0
 
@@ -33,18 +31,22 @@ class CyclonesSavedData(name: String) extends WorldSavedData(name) {
 
   def tick: Boolean = {
     cycloneTick += 1
-    if (cycloneTick > cycloneFinalTick) cycloneTick = cycloneFinalTick
+    if (cycloneTick >= cycloneFinalTick) {
+      cycloneTick = 0
+      cycloneFinalTick = 0
+      markDirty()
+      return true
+    }
     markDirty()
-    cycloneTick == cycloneFinalTick
+    false
   }
+
+  def isLeaving: Boolean = cycloneFinalTick > 0 && cycloneFinalTick - cycloneTick < 200
 
   def isActive: Boolean = cycloneTick < cycloneFinalTick
 
-  def stop(world: World): Unit = {
-    cycloneCountDown = 200
-    cycloneTick = 0
-    cycloneFinalTick = 0
-    MinecraftForge.EVENT_BUS.post(new CycloneEvent.Stop(world))
+  def leave(world: World): Unit = {
+    cycloneTick = 0 max (cycloneFinalTick - 199)
     markDirty()
   }
 
