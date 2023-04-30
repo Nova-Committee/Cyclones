@@ -41,6 +41,8 @@ object CycloneEvent {
     def getCount: Int = count
   }
 
+  class AboutToLeave(world: World) extends CycloneEvent(world)
+
   class Stop(world: World) extends CycloneEvent(world)
 }
 

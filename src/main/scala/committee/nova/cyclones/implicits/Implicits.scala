@@ -14,5 +14,7 @@ object Implicits {
     }
 
     def wontGenCyclone: Boolean = CommonConfig.isWorldInBlackList(world)
+
+    def weatherCanGenCyclones: Boolean = CommonConfig.canWeatherGenCyclones(world)
   }
 }

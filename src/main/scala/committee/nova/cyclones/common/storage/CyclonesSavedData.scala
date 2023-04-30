@@ -68,16 +68,18 @@ class CyclonesSavedData(name: String) extends WorldSavedData(name) {
     markDirty()
   }
 
-  def getTransition: Float = {
-    val remain = cycloneFinalTick - cycloneTick
-    if (cycloneTick < 200) cycloneTick / 200.0F else if (remain < 200) remain / 200.0F else 1.0F
-  }
-
   def getCountDown: Int = cycloneCountDown
 
   def getTick: Int = cycloneTick
 
   def getFinalTick: Int = cycloneFinalTick
+
+  def getRemainTick: Int = cycloneFinalTick - cycloneTick
+
+  def getTransition: Float = {
+    val remain = getRemainTick
+    if (cycloneTick < 200) cycloneTick / 200.0F else if (remain < 200) remain / 200.0F else 1.0F
+  }
 
   override def readFromNBT(tag: NBTTagCompound): Unit = {
     cycloneCountDown = tag.getInteger("countDown")

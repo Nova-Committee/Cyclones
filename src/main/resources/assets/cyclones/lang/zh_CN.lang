@@ -1,4 +1,4 @@
-msg.cyclones.notify=气旋正在迫近，预计在 %s 刻后到达
-msg.cyclones.start=你卷入了一场气旋！
+msg.cyclones.notify=气旋正在迫近，预计在 %s 秒后到达
+msg.cyclones.start=你被卷入了一场气旋！
 msg.cyclones.stop=正在从气旋中脱离……
 subtitle.cyclones.cyclone_start=卷入气旋

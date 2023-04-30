@@ -4,14 +4,11 @@ import com.google.common.base.Predicate
 import committee.nova.cyclones.Cyclones
 import committee.nova.cyclones.common.event.impl.CycloneEvent
 import committee.nova.cyclones.common.event.impl.CycloneEvent.{Start$Post, Start$Pre}
-import committee.nova.cyclones.common.init.SoundInit
 import committee.nova.cyclones.common.network.handler.NetworkHandler
-import committee.nova.cyclones.common.network.msg.CycloneStatusSyncMessage
+import committee.nova.cyclones.common.network.msg.{CycloneStartSoundMessage, CycloneStatusSyncMessage}
 import committee.nova.cyclones.implicits.Implicits.WorldImplicit
 import net.minecraft.entity.player.EntityPlayerMP
 import net.minecraft.entity.{EntityLiving, EntityLivingBase}
-import net.minecraft.network.play.server.SPacketSoundEffect
-import net.minecraft.util.SoundCategory
 import net.minecraft.util.math.AxisAlignedBB
 import net.minecraft.util.text.{Style, TextComponentTranslation, TextFormatting}
 import net.minecraftforge.common.MinecraftForge
@@ -72,11 +69,13 @@ object ForgeEventHandler {
     if (world.wontGenCyclone) return
     val cyclone = world.getCyclone
     if (e.phase == Phase.START) {
-      val couldCause = world.isRaining && world.isThundering
-      if (!couldCause) {
+      if (!world.weatherCanGenCyclones) {
         if (!cyclone.isActive) return
         if (!cyclone.isLeaving) cyclone.leave(world)
-        else if (cyclone.tick) MinecraftForge.EVENT_BUS.post(new CycloneEvent.Stop(world))
+        else {
+          if (cyclone.getRemainTick == 198) MinecraftForge.EVENT_BUS.post(new CycloneEvent.AboutToLeave(world))
+          if (cyclone.tick) MinecraftForge.EVENT_BUS.post(new CycloneEvent.Stop(world))
+        }
         return
       }
       if (cyclone.isOnCountDown) {
@@ -91,7 +90,10 @@ object ForgeEventHandler {
         MinecraftForge.EVENT_BUS.post(new Start$Post(world))
         return
       }
-      if (cyclone.isActive && cyclone.tick) MinecraftForge.EVENT_BUS.post(new CycloneEvent.Stop(world))
+      if (cyclone.isActive) {
+        if (cyclone.getRemainTick == 200) MinecraftForge.EVENT_BUS.post(new CycloneEvent.AboutToLeave(world))
+        if (cyclone.tick) MinecraftForge.EVENT_BUS.post(new CycloneEvent.Stop(world))
+      }
     } else {
       val msg = new CycloneStatusSyncMessage
       val dim = world.provider.getDimension
@@ -128,18 +130,20 @@ object ForgeEventHandler {
     world.getMinecraftServer.getPlayerList.getPlayers.asScala.foreach(p => {
       p.sendStatusMessage(new TextComponentTranslation("msg.cyclones.start")
         .setStyle(new Style().setColor(TextFormatting.RED)), true)
-      p.connection.sendPacket(new SPacketSoundEffect(SoundInit.cycloneStart, SoundCategory.WEATHER, p.posX, p.posY, p.posZ, 1.0F, 1.0F))
+      //p.connection.sendPacket(new SPacketSoundEffect(SoundInit.cycloneStart, SoundCategory.WEATHER, p.posX, p.posY, p.posZ, 1.0F, 1.0F))
     })
+    NetworkHandler.instance.sendToDimension(new CycloneStartSoundMessage, world.provider.getDimension)
   }
 
   @SubscribeEvent
   def onCycloneNotify(e: CycloneEvent.Notify): Unit = {
+    val count = String.format("%.1f", (e.getCount / 20.0).asInstanceOf[java.lang.Double])
     e.getWorld.getMinecraftServer.getPlayerList.getPlayers.asScala.foreach(p => p.sendStatusMessage(new TextComponentTranslation("msg.cyclones.notify",
-      e.getCount.toString).setStyle(new Style().setColor(TextFormatting.YELLOW)), true))
+      count).setStyle(new Style().setColor(TextFormatting.YELLOW)), true))
   }
 
   @SubscribeEvent
-  def onCycloneStop(e: CycloneEvent.Stop): Unit = {
+  def onCycloneAboutToLeave(e: CycloneEvent.AboutToLeave): Unit = {
     e.getWorld.getMinecraftServer.getPlayerList.getPlayers.asScala.foreach(p => p.sendStatusMessage(new TextComponentTranslation("msg.cyclones.stop")
       .setStyle(new Style().setColor(TextFormatting.GREEN)), true))
   }
