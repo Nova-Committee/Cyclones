@@ -33,7 +33,7 @@ object CycloneEvent {
   }
 
   class Start(world: World) extends CycloneEvent(world) {
-    protected var count: Int = 200
+    protected var count: Int = 100 + world.rand.nextInt(201)
     protected var duration: Int = 24000 + world.rand.nextInt(48000)
 
     def getDuration: Int = duration

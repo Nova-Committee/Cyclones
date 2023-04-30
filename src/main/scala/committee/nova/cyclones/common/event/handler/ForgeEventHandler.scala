@@ -8,7 +8,7 @@ import committee.nova.cyclones.common.init.SoundInit
 import committee.nova.cyclones.common.network.handler.NetworkHandler
 import committee.nova.cyclones.common.network.msg.CycloneStatusSyncMessage
 import committee.nova.cyclones.implicits.Implicits.WorldImplicit
-import net.minecraft.entity.EntityLiving
+import net.minecraft.entity.{EntityLiving, EntityLivingBase}
 import net.minecraft.network.play.server.SPacketSoundEffect
 import net.minecraft.util.SoundCategory
 import net.minecraft.util.text.{Style, TextComponentTranslation, TextFormatting}
@@ -37,6 +37,25 @@ object ForgeEventHandler {
       case l: EntityLiving =>
         if (Cyclones.isInfluencedByCycloneLogically(l, e.getTarget)) l.setAttackTarget(null)
       case _ =>
+    }
+  }
+
+  @SubscribeEvent
+  def onTargetCheck(e: WorldTickEvent): Unit = {
+    if (e.side != Side.SERVER || e.phase == Phase.START) return
+    val world = e.world
+    if (world.wontGenCyclone || !world.getCyclone.isActive) return
+    if (world.getWorldTime % 100L == 0L) {
+      world.getEntities[EntityLiving](classOf[EntityLiving], always).asScala.foreach(l => {
+        l.getRevengeTarget match {
+          case e: EntityLivingBase => if (Cyclones.isInfluencedByCycloneLogically(l, e)) l.setRevengeTarget(null)
+          case _ =>
+        }
+        l.getAttackTarget match {
+          case e: EntityLivingBase => if (Cyclones.isInfluencedByCycloneLogically(l, e)) l.setAttackTarget(null)
+          case _ =>
+        }
+      })
     }
   }
 
@@ -86,7 +105,7 @@ object ForgeEventHandler {
     val cyclone = world.getCyclone
     if (!world.isRaining || !world.isThundering || cyclone.isOnCountDown || cyclone.isActive) return
     if (world.rand.nextBoolean() || world.rand.nextBoolean()) return
-    val cd = 200
+    val cd = 100 + world.rand.nextInt(201)
     MinecraftForge.EVENT_BUS.post(new CycloneEvent.Notify(world, cd))
     cyclone.setCountDown(cd)
   }
@@ -94,7 +113,10 @@ object ForgeEventHandler {
   @SubscribeEvent
   def onCycloneStart(e: CycloneEvent.Start$Post): Unit = {
     val world = e.getWorld
-    world.getEntities[EntityLiving](classOf[EntityLiving], always).asScala.foreach(l => l.setAttackTarget(null))
+    world.getEntities[EntityLiving](classOf[EntityLiving], always).asScala.foreach(l => {
+      l.setRevengeTarget(null)
+      l.setAttackTarget(null)
+    })
     world.getMinecraftServer.getPlayerList.getPlayers.asScala.foreach(p => {
       p.sendStatusMessage(new TextComponentTranslation("msg.cyclones.start")
         .setStyle(new Style().setColor(TextFormatting.RED)), true)
