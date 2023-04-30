@@ -10,13 +10,18 @@ object CycloneStatusSyncMessage {
   class Handler extends IMessageHandler[CycloneStatusSyncMessage, IMessage] {
     override def onMessage(message: CycloneStatusSyncMessage, ctx: MessageContext): IMessage = {
       if (ctx.side != Side.CLIENT) return null
-      val world = Minecraft.getMinecraft.world
-      if (world == null) return null
-      if (message.dim != world.provider.getDimension) return null
-      val cyclone = world.getCyclone
-      cyclone.setCountDown(message.count)
-      cyclone.setTick(message.tick)
-      cyclone.setFinalTick(message.finalTick)
+      val mc = Minecraft.getMinecraft
+      mc.addScheduledTask(new Runnable {
+        override def run(): Unit = {
+          val world = mc.world
+          if (world == null) return
+          if (message.dim != world.provider.getDimension) return
+          val cyclone = world.getCyclone
+          cyclone.setCountDown(message.count)
+          cyclone.setTick(message.tick)
+          cyclone.setFinalTick(message.finalTick)
+        }
+      })
       null
     }
   }

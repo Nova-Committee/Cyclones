@@ -12,8 +12,12 @@ object CycloneStartSoundMessage {
   class Handler extends IMessageHandler[CycloneStartSoundMessage, IMessage] {
     override def onMessage(message: CycloneStartSoundMessage, ctx: MessageContext): IMessage = {
       if (ctx.side != Side.CLIENT) return null
-      val handler = Minecraft.getMinecraft.getSoundHandler
-      handler.playSound(new PositionedSoundRecord(SoundInit.cycloneStart.getRegistryName, SoundCategory.WEATHER, 1.0F, 1.0F, false, 0, ISound.AttenuationType.NONE, 0.0F, 0.0F, 0.0F))
+      val mc = Minecraft.getMinecraft
+      val handler = mc.getSoundHandler
+      mc.addScheduledTask(new Runnable {
+        override def run(): Unit = handler.playSound(new PositionedSoundRecord(SoundInit.cycloneStart.getRegistryName, SoundCategory.WEATHER,
+          1.0F, 1.0F, false, 0, ISound.AttenuationType.NONE, 0.0F, 0.0F, 0.0F))
+      })
       null
     }
   }
