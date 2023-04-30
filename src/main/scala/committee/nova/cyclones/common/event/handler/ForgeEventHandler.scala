@@ -8,9 +8,11 @@ import committee.nova.cyclones.common.init.SoundInit
 import committee.nova.cyclones.common.network.handler.NetworkHandler
 import committee.nova.cyclones.common.network.msg.CycloneStatusSyncMessage
 import committee.nova.cyclones.implicits.Implicits.WorldImplicit
+import net.minecraft.entity.player.EntityPlayerMP
 import net.minecraft.entity.{EntityLiving, EntityLivingBase}
 import net.minecraft.network.play.server.SPacketSoundEffect
 import net.minecraft.util.SoundCategory
+import net.minecraft.util.math.AxisAlignedBB
 import net.minecraft.util.text.{Style, TextComponentTranslation, TextFormatting}
 import net.minecraftforge.common.MinecraftForge
 import net.minecraftforge.event.entity.living.LivingSetAttackTargetEvent
@@ -21,11 +23,13 @@ import net.minecraftforge.fml.common.gameevent.TickEvent.{Phase, WorldTickEvent}
 import net.minecraftforge.fml.relauncher.Side
 
 import scala.collection.JavaConverters.collectionAsScalaIterableConverter
+import scala.collection.mutable
 
 @EventBusSubscriber
 object ForgeEventHandler {
-  final val always: Predicate[_ >: EntityLiving] = new Predicate[EntityLiving] {
-    override def apply(input: EntityLiving): Boolean = true
+
+  def getAlways[T]: Predicate[_ >: T] = new Predicate[T] {
+    override def apply(input: T): Boolean = true
   }
 
   @SubscribeEvent
@@ -46,7 +50,9 @@ object ForgeEventHandler {
     val world = e.world
     if (world.wontGenCyclone || !world.getCyclone.isActive) return
     if (world.getWorldTime % 100L == 0L) {
-      world.getEntities[EntityLiving](classOf[EntityLiving], always).asScala.foreach(l => {
+      val aabbs = mutable.Buffer[AxisAlignedBB]()
+      world.getPlayers[EntityPlayerMP](classOf[EntityPlayerMP], getAlways[EntityPlayerMP]).asScala.foreach(p => aabbs.+=(new AxisAlignedBB(p.getPosition.add(50, 50, 50), p.getPosition.add(-50, -50, -50))))
+      for (aabb <- aabbs) world.getEntitiesWithinAABB[EntityLiving](classOf[EntityLiving], aabb, getAlways[EntityLiving]).asScala.foreach(l => {
         l.getRevengeTarget match {
           case e: EntityLivingBase => if (Cyclones.isInfluencedByCycloneLogically(l, e)) l.setRevengeTarget(null)
           case _ =>
@@ -113,7 +119,9 @@ object ForgeEventHandler {
   @SubscribeEvent
   def onCycloneStart(e: CycloneEvent.Start$Post): Unit = {
     val world = e.getWorld
-    world.getEntities[EntityLiving](classOf[EntityLiving], always).asScala.foreach(l => {
+    world.getEntities[EntityLiving](classOf[EntityLiving], new Predicate[EntityLiving] {
+      override def apply(input: EntityLiving): Boolean = world.getChunk(input.getPosition).isLoaded
+    }).asScala.foreach(l => {
       l.setRevengeTarget(null)
       l.setAttackTarget(null)
     })
