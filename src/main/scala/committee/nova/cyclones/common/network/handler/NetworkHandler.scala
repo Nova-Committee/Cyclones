@@ -2,7 +2,6 @@ package committee.nova.cyclones.common.network.handler
 
 import committee.nova.cyclones.Cyclones
 import committee.nova.cyclones.common.network.msg.{CycloneStartSoundMessage, CycloneStatusSyncMessage}
-import net.minecraftforge.fml.common.event.FMLPreInitializationEvent
 import net.minecraftforge.fml.common.network.NetworkRegistry
 import net.minecraftforge.fml.common.network.simpleimpl.{IMessage, IMessageHandler, SimpleNetworkWrapper}
 import net.minecraftforge.fml.relauncher.Side
@@ -12,7 +11,7 @@ object NetworkHandler {
 
   var nextID: Int = 0
 
-  def init(e: FMLPreInitializationEvent): Unit = {
+  def init(): Unit = {
     registerMessage(classOf[CycloneStatusSyncMessage.Handler], classOf[CycloneStatusSyncMessage], Side.CLIENT)
     registerMessage(classOf[CycloneStartSoundMessage.Handler], classOf[CycloneStartSoundMessage], Side.CLIENT)
   }

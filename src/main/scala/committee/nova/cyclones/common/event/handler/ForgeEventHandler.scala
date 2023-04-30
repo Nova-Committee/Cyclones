@@ -71,7 +71,7 @@ object ForgeEventHandler {
     if (e.phase == Phase.START) {
       if (!world.weatherCanGenCyclones) {
         if (!cyclone.isActive) return
-        if (!cyclone.isLeaving) cyclone.leave(world)
+        if (!cyclone.isLeaving) cyclone.leave()
         else {
           if (cyclone.getRemainTick == 198) MinecraftForge.EVENT_BUS.post(new CycloneEvent.AboutToLeave(world))
           if (cyclone.tick) MinecraftForge.EVENT_BUS.post(new CycloneEvent.Stop(world))

@@ -17,7 +17,7 @@ object Cyclones {
 
   @EventHandler def preInit(e: FMLPreInitializationEvent): Unit = {
     CommonConfig.init(e)
-    NetworkHandler.init(e)
+    NetworkHandler.init()
   }
 
   def isInfluencedByCycloneVisually(e1: Entity, e2: Entity): Boolean = {
@@ -36,6 +36,4 @@ object Cyclones {
     if (world != e2.world) return false
     world.getCyclone.isActive && e1.getDistanceSq(e2) > cycloneInfluenceLogicSq
   }
-
-  // TODO: Dimension Blacklist 
 }

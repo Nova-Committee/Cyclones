@@ -45,7 +45,7 @@ class CyclonesSavedData(name: String) extends WorldSavedData(name) {
 
   def isActive: Boolean = cycloneTick < cycloneFinalTick
 
-  def leave(world: World): Unit = {
+  def leave(): Unit = {
     cycloneTick = 0 max (cycloneFinalTick - 199)
     markDirty()
   }
