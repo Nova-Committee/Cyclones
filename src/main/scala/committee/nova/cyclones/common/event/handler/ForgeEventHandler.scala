@@ -112,7 +112,7 @@ object ForgeEventHandler {
     val world = e.world
     val cyclone = world.getCyclone
     if (!world.isRaining || !world.isThundering || cyclone.isOnCountDown || cyclone.isActive) return
-    if (world.rand.nextBoolean() || world.rand.nextBoolean()) return
+    if (world.rand.nextInt(101) < 1) return
     val cd = 100 + world.rand.nextInt(201)
     MinecraftForge.EVENT_BUS.post(new CycloneEvent.Notify(world, cd))
     cyclone.setCountDown(cd)
